@@ -9,7 +9,7 @@ class FilesFinder:
         self.catalogs = []
 
         if ignore is None:
-            self.get_system_directories()
+            self.__get_system_directories()
         else:
             self.ignore_catalog = ignore
 
@@ -18,7 +18,7 @@ class FilesFinder:
         else:
             self.permissions = permissions
 
-    def get_system_directories(self):
+    def __get_system_directories(self):
         if sys.platform.startswith('win'):
             self.ignore_catalog = ['Windows']
         elif sys.platform.startswith('linux'):
@@ -36,7 +36,3 @@ class FilesFinder:
                 if not any(ignore in prepend_directory for ignore in self.ignore_catalog):
                     self.catalogs.append(prepend_directory)
         return self.files
-
-
-v = FilesFinder()
-print(v.get_files_directory())
