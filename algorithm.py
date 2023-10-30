@@ -32,39 +32,45 @@ def ld(string1: str, string2: str, max_deep: int, deep=0) -> int:
 
 
 class LD:
-    def __init__(self, ld_deep):
-        self.ld_deep = ld_deep
-
-    def equals_ld(self, string1: str, string2: str) -> bool:
-        if ld(string1, string2, self.ld_deep) <= self.ld_deep:
+    @staticmethod
+    def equals_ld(string1: str, string2: str, ld_deep: int) -> bool:
+        if ld(string1, string2, ld_deep) <= ld_deep:
             return True
         return False
 
-    def list_in_list_ld(self, sub_coll: list, main_coll: list) -> bool:
+    @staticmethod
+    def list_in_list_ld(sub_coll: list, main_coll: list, ld_deep: int) -> bool:
         for word in sub_coll:
             eq = False
             for item in main_coll:
-                if self.equals_ld(word, item):
+                if LD.equals_ld(word, item, ld_deep):
                     eq = True
             if not eq:
                 return False
         return True
 
-    def word_in_list_ld(self, word: str, coll: list):
+    @staticmethod
+    def word_in_list_ld(word: str, coll: list, ld_deep: int):
         for item in coll:
-            if self.equals_ld(word, item):
+            if LD.equals_ld(word, item, ld_deep):
                 return True
         return False
 
-    def try_get_word_ld(self, word: str, coll: list) -> str:
+    @staticmethod
+    def try_get_word_ld(word: str, coll: list, ld_deep: int) -> str:
+        best_item = " "
+        best_ld_deep = 100000
         for item in coll:
-            if self.equals_ld(word, item):
-                return item
-        return " "
+            ld_result = ld(word, item, ld_deep)
+            if ld_result <= ld_deep and best_ld_deep > ld_result:
+                best_item = item
+                best_ld_deep = ld_result
+        return best_item
 
 
 def main():
-    print(ld("yabxe", "abcde", 3))
+    print(levenstein_distances("главный", "главны"))
+    print(ld("главный", "главны", 1))
     print(ld("abcdegz", "abcde", 3))
     print(ld("abcdefghijk", "iucdefhyhij", 3))
 

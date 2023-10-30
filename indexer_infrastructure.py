@@ -1,19 +1,20 @@
 import json
 import re
 from algorithm import LD
+from collections import Counter
 
 with open('StopWords/stopwords-ru.json', encoding='utf-8') as json_file:
-    stop_words_ru = json.load(json_file)
+    stop_words_ru = set(json.load(json_file))
 
 with open('StopWords/stopwords-eng.json', encoding='utf-8') as json_file:
-    stop_words_eng = json.load(json_file)
+    stop_words_eng = set(json.load(json_file))
 
 PATTERN = re.compile('[\W_]+')
 ENCODING = ['utf-8', 'cp1251', 'cp1252', 'cp437', 'utf-16be']
-ld = LD(3)
 
 
 def process_files(file_paths) -> dict:
+    print("START PROCESSING FILES")
     file_to_words = {}
     for file_name in file_paths:
         for encoding in ENCODING:
@@ -32,6 +33,7 @@ def process_files(file_paths) -> dict:
     for file_name in file_to_words.keys():
         file_to_index[file_name] = make_word_to_index(file_to_words[file_name])
 
+    print("END PROCESSING FILES")
     return swap_keys(file_to_index)
 
 
@@ -40,10 +42,11 @@ def process_phrase(phrase) -> list:
     return process_data(phrase.split())
 
 
-def process_data(data) -> list:
+def process_data(data: list) -> list:
     processed_data = []
     for word in data:
-        if len(word) < 3: # or ld.word_in_list_ld(word, stop_words_ru) or ld.word_in_list_ld(word, stop_words_eng):
+        if len(word) == 1 or word in stop_words_ru or word in stop_words_eng:
+            # LD.word_in_list_ld(word, stop_words_ru, 0) or LD.word_in_list_ld(word, stop_words_eng, 0):
             continue
         processed_data.append(word)
     return processed_data
@@ -59,7 +62,7 @@ def make_word_to_index(file_to_words) -> dict:
     return word_to_index
 
 
-def swap_keys(file_to_index) -> dict:
+def swap_keys(file_to_index: dict) -> dict:
     """Swap key1 and key2 in {key1: {key2: value2}, ...}"""
     file_index = {}
     for file_name in file_to_index.keys():
@@ -74,19 +77,17 @@ def swap_keys(file_to_index) -> dict:
     return file_index
 
 
-def get_file_on_phrase(files_words: dict, phrase: list):
-    priority = []
+def get_file_priority_on_phrase(files_words: dict, priority_range=0):
+    priority = {}
     for file_name, word in files_words.items():
-        temp = []
-
-        if not ld.list_in_list_ld(phrase, word.keys()):
-            continue
+        temp_indexes = []
 
         for i, value in enumerate(word.values()):
-            temp.append([index-i for index in value])
+            temp_indexes.extend([index - i for index in value])
 
-        if set(temp[0]).intersection(*temp):
-            priority.append(file_name)
+        power = temp_indexes.count(Counter(temp_indexes).most_common(1)[0][0])
+        if power > priority_range:
+            priority[file_name] = power
 
-    return priority
+    return sorted(priority.items(), key=lambda x: x[1], reverse=True)[:10]
 
