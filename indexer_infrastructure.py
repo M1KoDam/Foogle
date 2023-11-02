@@ -89,5 +89,5 @@ def get_file_priority_on_phrase(files_words: dict, priority_range=0):
         if power > priority_range:
             priority[file_name] = power
 
-    return sorted(priority.items(), key=lambda x: x[1], reverse=True)[:10]
+    return [item[0] for item in sorted(priority.items(), key=lambda x: x[1], reverse=True)[:10]]
 
