@@ -1,3 +1,6 @@
+import math
+
+
 def levenstein_distances(string1: str, string2: str) -> int:
     if string1 == string2:
         return 0
@@ -17,9 +20,9 @@ def ld(string1: str, string2: str, max_deep: int, deep=0) -> int:
     if string1 == string2:
         return deep
     if len(string1) == 0:
-        return deep+len(string2)
+        return deep + len(string2)
     if len(string2) == 0:
-        return deep+len(string1)
+        return deep + len(string1)
     if string1[-1] == string2[-1]:
         return ld(string1[:-1], string2[:-1], max_deep, deep)
 
@@ -29,6 +32,20 @@ def ld(string1: str, string2: str, max_deep: int, deep=0) -> int:
     return min(ld(string1[:-1], string2, max_deep, deep + 1),
                ld(string1[:-1], string2[:-1], max_deep, deep + 1),
                ld(string1, string2[:-1], max_deep, deep + 1))
+
+
+def tf_idf(word_in_file: int,
+           file_words_count: int,
+           files_count: int,
+           files_count_with_word: int,
+           priority_range=0) -> float:
+    tf = word_in_file / file_words_count
+    itf = math.log10(files_count / files_count_with_word)
+    power = tf * itf
+
+    if power > priority_range:
+        return power
+    return 0
 
 
 class LD:
@@ -57,15 +74,19 @@ class LD:
         return False
 
     @staticmethod
-    def try_get_word_ld(word: str, coll: list, ld_deep: int) -> str:
-        best_item = " "
-        best_ld_deep = 100000
+    def try_get_words_ld(word: str, coll: list, ld_deep: int) -> (list, str):
+        best_item = ""
+        ld_best = 10000
+        items = []
         for item in coll:
             ld_result = ld(word, item, ld_deep)
-            if ld_result <= ld_deep and best_ld_deep > ld_result:
-                best_item = item
-                best_ld_deep = ld_result
-        return best_item
+            if ld_result <= ld_deep:
+                if ld_result < ld_best:
+                    best_item = item
+                    ld_best = ld_result
+                items.append(item)
+
+        return items, best_item
 
 
 def main():
