@@ -5,14 +5,17 @@ APP_SETTINGS = 1
 APP_OPEN_DIRECTORY = 2
 APP_FIND_PHRASE = 3
 
+ALL = 10150
 TXT = 10230
 INI = 10231
 DOC = 10232
 DOCX = 10233
 HTML = 10234
-PY = 10235
-JSON = 10236
-CSV = 10237
+JSON = 10235
+CSV = 10236
+DLL = 10237
+PY = 10238
+CS = 10239
 
 LD0 = 11900
 LD1 = 11901
@@ -80,6 +83,10 @@ class PermissionMenu(wx.Menu):
         self.frame = frame
         self.permissions = ['txt', 'ini']
 
+        self.all_item = self.Append(ALL, 'all', kind=wx.ITEM_CHECK)
+
+        self.AppendSeparator()
+
         self.txt_item = self.Append(TXT, 'txt', kind=wx.ITEM_CHECK)
         self.txt_item.Check(True)
         self.ini_item = self.Append(INI, 'ini', kind=wx.ITEM_CHECK)
@@ -87,20 +94,40 @@ class PermissionMenu(wx.Menu):
         self.doc_item = self.Append(DOC, 'doc', kind=wx.ITEM_CHECK)
         self.docx_item = self.Append(DOCX, 'docx', kind=wx.ITEM_CHECK)
         self.html_item = self.Append(HTML, 'html', kind=wx.ITEM_CHECK)
-        self.py_item = self.Append(PY, 'py', kind=wx.ITEM_CHECK)
         self.json_item = self.Append(JSON, 'json', kind=wx.ITEM_CHECK)
         self.csv_item = self.Append(CSV, 'csv', kind=wx.ITEM_CHECK)
+        self.dll_item = self.Append(DLL, 'dll', kind=wx.ITEM_CHECK)
+        self.py_item = self.Append(PY, 'py', kind=wx.ITEM_CHECK)
+        self.cs_item = self.Append(CS, 'cs', kind=wx.ITEM_CHECK)
+
+        frame.Bind(wx.EVT_MENU, self.onCheckAllItem, self.all_item)
 
         self.items = [self.txt_item, self.ini_item, self.doc_item, self.docx_item,
-                      self.html_item, self.py_item, self.json_item, self.csv_item]
+                      self.html_item, self.json_item, self.csv_item, self.dll_item,
+                      self.py_item, self.cs_item]
         for item in self.items:
             frame.Bind(wx.EVT_MENU, self.onCheckItem, item)
+
+    def onCheckAllItem(self, event):
+        menu_item = self.frame.GetMenuBar().FindItemById(event.GetId())
+        if menu_item.IsChecked():
+            self.permissions.clear()
+            for item in self.items:
+                item.Check(True)
+                self.permissions.append(item.GetItemLabel())
+        else:
+            for item in self.items:
+                item.Check(False)
+                self.permissions.remove(item.GetItemLabel())
 
     def onCheckItem(self, event):
         menu_item = self.frame.GetMenuBar().FindItemById(event.GetId())
         if menu_item.IsChecked():
             self.permissions.append(menu_item.GetItemLabel())
+            if len(self.permissions) == len(self.items):
+                self.all_item.Check(True)
         else:
+            self.all_item.Check(False)
             self.permissions.remove(menu_item.GetItemLabel())
 
 

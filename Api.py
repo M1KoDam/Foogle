@@ -22,6 +22,7 @@ class Api(wx.Frame):
         self.statusBar = self.CreateStatusBar()
 
         self.status = "Ready"
+        self.cache_size = 30
         self.undo_cache = []
         self.redo_cache = []
         self.cur_cache = None
@@ -95,13 +96,13 @@ class Api(wx.Frame):
         dlg.Destroy()
 
     def onUndo(self, event):
-        self.redo_cache.append(self.cur_cache)
+        self.addToRedoCache()
         if len(self.undo_cache) > 0:
             self.cur_cache = self.undo_cache.pop()
         self.updateAppByCache()
 
     def onRedo(self, event):
-        self.undo_cache.append(self.cur_cache)
+        self.addToUndoCache()
         if len(self.redo_cache) > 0:
             self.cur_cache = self.redo_cache.pop()
         self.updateAppByCache()
@@ -109,7 +110,7 @@ class Api(wx.Frame):
     def updateUndoRedo(self, new_cache: CacheElement):
         self.redo_cache.clear()
         if self.cur_cache is not None and self.cur_cache not in self.undo_cache and self.cur_cache != new_cache:
-            self.undo_cache.append(self.cur_cache)
+            self.addToUndoCache()
 
         self.cur_cache = new_cache
         self.updateUndoRedoButtons()
@@ -131,6 +132,16 @@ class Api(wx.Frame):
     def updateUndoRedoButtons(self):
         self.menuBar.actionsMenu.undo_item.Enable(True if len(self.undo_cache) > 0 else False)
         self.menuBar.actionsMenu.redo_item.Enable(True if len(self.redo_cache) > 0 else False)
+
+    def addToUndoCache(self):
+        self.undo_cache.append(self.cur_cache)
+        if len(self.undo_cache) > self.cache_size:
+            self.undo_cache.pop(0)
+
+    def addToRedoCache(self):
+        self.redo_cache.append(self.cur_cache)
+        if len(self.redo_cache) > self.cache_size:
+            self.redo_cache.pop(0)
 
 
 def main():
