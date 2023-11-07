@@ -8,14 +8,12 @@ APP_FIND_PHRASE = 3
 ALL = 10150
 TXT = 10230
 INI = 10231
-DOC = 10232
-DOCX = 10233
-HTML = 10234
-JSON = 10235
-CSV = 10236
-DLL = 10237
-PY = 10238
-CS = 10239
+HTML = 10232
+JSON = 10233
+CSV = 10234
+DLL = 10235
+PY = 10236
+CS = 10237
 
 LD0 = 11900
 LD1 = 11901
@@ -91,8 +89,6 @@ class PermissionMenu(wx.Menu):
         self.txt_item.Check(True)
         self.ini_item = self.Append(INI, 'ini', kind=wx.ITEM_CHECK)
         self.ini_item.Check(True)
-        self.doc_item = self.Append(DOC, 'doc', kind=wx.ITEM_CHECK)
-        self.docx_item = self.Append(DOCX, 'docx', kind=wx.ITEM_CHECK)
         self.html_item = self.Append(HTML, 'html', kind=wx.ITEM_CHECK)
         self.json_item = self.Append(JSON, 'json', kind=wx.ITEM_CHECK)
         self.csv_item = self.Append(CSV, 'csv', kind=wx.ITEM_CHECK)
@@ -102,9 +98,8 @@ class PermissionMenu(wx.Menu):
 
         frame.Bind(wx.EVT_MENU, self.onCheckAllItem, self.all_item)
 
-        self.items = [self.txt_item, self.ini_item, self.doc_item, self.docx_item,
-                      self.html_item, self.json_item, self.csv_item, self.dll_item,
-                      self.py_item, self.cs_item]
+        self.items = [self.txt_item, self.ini_item, self.html_item, self.json_item,
+                      self.csv_item, self.dll_item, self.py_item, self.cs_item]
         for item in self.items:
             frame.Bind(wx.EVT_MENU, self.onCheckItem, item)
 
