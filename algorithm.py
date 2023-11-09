@@ -17,17 +17,18 @@ def levenstein_distances(string1: str, string2: str) -> int:
 
 
 def ld(string1: str, string2: str, max_deep: int, deep=0) -> int:
+    if deep > max_deep:
+        return 10000
     if string1 == string2:
         return deep
     if len(string1) == 0:
-        return deep + len(string2)
+        deep = deep + len(string2)
+        return 10000 if deep > max_deep else deep
     if len(string2) == 0:
-        return deep + len(string1)
+        deep = deep + len(string1)
+        return 10000 if deep > max_deep else deep
     if string1[-1] == string2[-1]:
         return ld(string1[:-1], string2[:-1], max_deep, deep)
-
-    if deep > max_deep:
-        return 10000
 
     return min(ld(string1[:-1], string2, max_deep, deep + 1),
                ld(string1[:-1], string2[:-1], max_deep, deep + 1),
