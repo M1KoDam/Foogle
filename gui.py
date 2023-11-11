@@ -1,9 +1,12 @@
-import os
+import re
+
 import wx
+import threading
 
 APP_SETTINGS = 1
 APP_OPEN_DIRECTORY = 2
 APP_FIND_PHRASE = 3
+APP_BUILD_INDEX = 4
 
 ALL = 10150
 TXT = 10230
@@ -24,6 +27,8 @@ USW = 12300
 
 UM = 12560
 
+
+encoding = ['utf-8', 'cp1251', 'cp1252', 'cp437', 'utf-16be']
 
 class MenuBar(wx.MenuBar):
     def __init__(self, frame):
@@ -64,12 +69,12 @@ class ActionsMenu(wx.Menu):
         self.frame = frame
 
         self.undo_item = wx.MenuItem(self, wx.ID_UNDO, "Undo\tCtrl+Z", "undo")
-        self.undo_item.Enable(False)
         self.Append(self.undo_item)
+        self.undo_item.Enable(False)
 
         self.redo_item = wx.MenuItem(self, wx.ID_REDO, "Redo\tCtrl+Shift+Z", "redo")
-        self.redo_item.Enable(False)
         self.Append(self.redo_item)
+        self.redo_item.Enable(False)
 
         self.frame.Bind(wx.EVT_MENU, self.frame.onUndo, id=wx.ID_UNDO)
         self.frame.Bind(wx.EVT_MENU, self.frame.onRedo, id=wx.ID_REDO)
@@ -200,7 +205,7 @@ class DialogueWindows:
         wx.MessageBox(f'Please select at least one permission', 'Notify')
 
 
-class HorizontalBox(wx.BoxSizer):
+class DirectoryBox(wx.BoxSizer):
     def __init__(self, parent, text, image, button_id, value, bind_func):
         super().__init__(wx.HORIZONTAL)
 
@@ -213,6 +218,24 @@ class HorizontalBox(wx.BoxSizer):
         self.Add(self.bitmap_button, flag=wx.LEFT | wx.RIGHT, border=3)
 
         self.bitmap_button.Bind(wx.EVT_BUTTON, bind_func)
+
+
+class PhraseBox(wx.BoxSizer):
+    def __init__(self, parent, text, find_image, build_image, find_id, build_id, value, find_func, build_func):
+        super().__init__(wx.HORIZONTAL)
+
+        self.tc = wx.TextCtrl(parent, value=value)
+        self.st = wx.StaticText(parent, label=text)
+        self.find_button = wx.BitmapButton(parent, find_id, bitmap=wx.Bitmap(find_image))
+        self.build_button = wx.BitmapButton(parent, build_id, bitmap=wx.Bitmap(build_image))
+
+        self.Add(self.st, flag=wx.TOP | wx.LEFT | wx.RIGHT, border=3)
+        self.Add(self.tc, proportion=1, flag=wx.LEFT | wx.RIGHT, border=8)
+        self.Add(self.find_button, flag=wx.LEFT | wx.RIGHT, border=3)
+        self.Add(self.build_button, flag=wx.LEFT | wx.RIGHT, border=3)
+
+        self.find_button.Bind(wx.EVT_BUTTON, find_func)
+        self.build_button.Bind(wx.EVT_BUTTON, build_func)
 
 
 class OutputPanel(wx.Panel):
@@ -242,7 +265,7 @@ class OutputPanel(wx.Panel):
     def addFileButtons(self, files_names: list):
         self.clearPanel()
         for file_name in files_names:
-            file_name = file_name[len(self.parent.directoryBox.tc.Value) + 1:]
+            file_name = file_name[len(self.parent.directoryBox.tc.Value):].lstrip('/').lstrip('\\')
             button = wx.Button(self.filePanel, label=file_name)
             self.fileSizer.Add(button, wx.ID_ANY, flag=wx.ALL | wx.EXPAND, border=3)
             button.Bind(wx.EVT_BUTTON, lambda event, name=file_name: self.writeFileInfoToTextLine(event, name))
@@ -256,14 +279,7 @@ class OutputPanel(wx.Panel):
         self.textLine.Clear()
         self.pathLine.Clear()
 
-    def writeFileInfoToTextLine(self, event, file_name):
-        encoding = ['utf-8', 'cp1251', 'cp1252', 'cp437', 'utf-16be']
-        full_name = f"{self.parent.cur_directory}/{file_name}"
-        if full_name in self.files_cache.keys():
-            self.textLine.SetValue(self.files_cache[full_name])
-            self.pathLine.SetValue(full_name)
-            return
-
+    def threadFileInfoToTextLine(self, full_name):
         for e in encoding:
             try:
                 with open(full_name, 'r', encoding=e) as file:
@@ -280,21 +296,31 @@ class OutputPanel(wx.Panel):
                 self.pathLine.Clear()
                 return
 
+    def writeFileInfoToTextLine(self, event, file_name):
+        full_name = f"{self.parent.cur_directory}\\{file_name}"
+        if full_name in self.files_cache.keys():
+            self.textLine.SetValue(self.files_cache[full_name])
+            self.pathLine.SetValue(full_name)
+            return
+
+        thread = threading.Thread(target=self.threadFileInfoToTextLine, kwargs={'full_name': full_name})
+        thread.start()
+
 
 class InputPanel(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
 
-        self.default_directory = os.getcwd()
-        self.default_phrase = ""
+        self.default_directory = "TestFiles"#os.getcwd()
+        self.default_phrase = "главный"
 
         self.cur_directory = self.default_directory
         self.cur_phrase = self.default_phrase
 
         self.out_box_sizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.directoryBox = HorizontalBox(
+        self.directoryBox = DirectoryBox(
             self,
             text="Directory: ",
             image="Data/Icons/directory16.png",
@@ -304,13 +330,16 @@ class InputPanel(wx.Panel):
         )
         self.out_box_sizer.Add(self.directoryBox, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, border=10)
 
-        self.phraseBox = HorizontalBox(
+        self.phraseBox = PhraseBox(
             self,
             text="Phrase: ",
-            image="Data/Icons/search16.png",
-            button_id=APP_FIND_PHRASE,
+            find_image="Data/Icons/search16.png",
+            build_image="Data/Icons/build16.png",
+            find_id=APP_FIND_PHRASE,
+            build_id=APP_BUILD_INDEX,
             value=self.default_phrase,
-            bind_func=self.parent.onFindPhrase
+            find_func=self.parent.onFindPhraseUsingCache,
+            build_func=self.parent.onReBuildIndex
         )
         self.out_box_sizer.Add(self.phraseBox, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, border=10)
 
@@ -325,11 +354,22 @@ class InputPanel(wx.Panel):
 
     def onBlockButtons(self):
         self.directoryBox.bitmap_button.Disable()
-        self.phraseBox.bitmap_button.Disable()
+        self.phraseBox.find_button.Disable()
+        self.phraseBox.build_button.Disable()
 
     def onUnblockButtons(self):
         self.directoryBox.bitmap_button.Enable()
-        self.phraseBox.bitmap_button.Enable()
+        self.phraseBox.find_button.Enable()
+        self.phraseBox.build_button.Enable()
+
+    def get_directory(self):
+        if re.fullmatch(r'[A-Z][ :]?[\\/]?', self.cur_directory):
+            new_dir = self.cur_directory[0] + ":\\"
+            self.cur_directory = new_dir
+            self.directoryBox.tc.SetValue(new_dir)
+            return new_dir
+        else:
+            return self.cur_directory
 
 
 def main():
