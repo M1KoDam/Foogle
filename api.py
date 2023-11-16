@@ -1,5 +1,4 @@
 import sys
-import os
 from indexer import Indexer
 from files_finder import FilesFinder
 from gui import *

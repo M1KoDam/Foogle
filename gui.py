@@ -1,5 +1,5 @@
+import os
 import re
-
 import wx
 import threading
 
@@ -312,8 +312,8 @@ class InputPanel(wx.Panel):
         super().__init__(parent)
         self.parent = parent
 
-        self.default_directory = "TestFiles"#os.getcwd()
-        self.default_phrase = "главный"
+        self.default_directory = os.getcwd()
+        self.default_phrase = ""
 
         self.cur_directory = self.default_directory
         self.cur_phrase = self.default_phrase
